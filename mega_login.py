@@ -15,6 +15,6 @@ with DAG(
 
         response = requests.get("http://mega-api-service/api/servers")
 
-        print(response.content)
+        print(response.json())
 
     get_servers()
