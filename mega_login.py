@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.decorators import task
 from airflow.utils.dates import days_ago
+import requests
 
 with DAG(
     dag_id="mega_login",
@@ -11,10 +12,15 @@ with DAG(
 
     @task
     def get_servers():
-        import requests
-
         response = requests.get("http://mega-api-service/api/servers")
+        return [obj["email"] for obj in response.json()]
 
-        print(response.json())
+    @task
+    def login(email):
+        response = requests.post(
+            "http://mega-api-service/api/df", json={"email": email}
+        )
 
-    get_servers()
+        print(response.content)
+
+    login.expand(email=get_servers())
