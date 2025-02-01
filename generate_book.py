@@ -12,15 +12,15 @@ from airflow import DAG
 from airflow.decorators import task
 from airflow.utils.dates import days_ago
 from airflow.hooks.base import BaseHook
+from airflow.models.param import Param
 
-
-import requests
 
 with DAG(
     dag_id="generate_book",
     schedule_interval=None,
     start_date=days_ago(1),
     catchup=False,
+    params={"story_description": Param(type="string")},
 ) as dag:
 
     @task
@@ -57,6 +57,8 @@ with DAG(
         print(json.dumps(out, indent=2))
 
         return out
+
+    generate_story()
 
 
 # class StoryImageGenerator:
