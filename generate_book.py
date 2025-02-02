@@ -261,10 +261,10 @@ with DAG(
 
     paragraph_descriptions = get_paragraph_description.partial(
         summary=summary, characters=character_descriptions
-    ).expand(paragraph=story["story"])
+    ).expand(paragraph=story.story)
 
     prompt_data = generate_image_prompt.partial(
         characters=character_descriptions
     ).expand_kwargs(paragraph_descriptions)
 
-    generate_image.partial(title=story["title"]).expand(prompt_data=prompt_data)
+    generate_image.partial(title=story.title).expand(prompt_data=prompt_data)
