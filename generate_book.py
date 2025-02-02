@@ -264,7 +264,7 @@ with DAG(
         img = Image.open(os.path.join(static_dir, title_dir, "0", "image.jpg"))
         new_size = (int(img.width * 0.2), int(img.height * 0.2))
 
-        thumbnail = img.resize(new_size, Image.ANTIALIAS)
+        thumbnail = img.resize(new_size, Image.LANCZOS)
         thumbnail.save(os.path.join(static_dir, title_dir, "thumbnail.jpg"))
 
     story = generate_story()
