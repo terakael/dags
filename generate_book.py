@@ -1,7 +1,6 @@
 import base64
 from datetime import timedelta
 import json
-import re
 import time
 import os
 from typing import Dict, List
@@ -29,7 +28,7 @@ with DAG(
     default_args={"retries": 3, "retry_delay": timedelta(minutes=1)},
 ) as dag:
 
-    @task(multiple_outputs=True)
+    @task
     def generate_story(dag_run):
         prompt = f"""
         Write a short story aimed at toddlers, using the following description:
@@ -40,24 +39,20 @@ with DAG(
         
         Make sure the story contains a life lesson, and a humorous twist.  Keep the story positive.  Use simple words.
         
-        The story should be eight paragraphs long.
+        The output should be eight paragraphs long.
         
-        Your output should be a JSON object containing a fitting title, and an array of eight paragraphs.
+        Your output should be a JSON object containing an array of eight paragraphs.
         """
 
         conn = BaseHook.get_connection("gemini_api")
         client = genai.Client(api_key=conn.password)
-
-        class Story(BaseModel):
-            title: str
-            story: list[str]
 
         response = client.models.generate_content(
             model="gemini-2.0-flash-exp",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_schema=Story,
+                response_schema={"type": "array", "items": {"type": "string"}},
             ),
         )
 
@@ -74,7 +69,7 @@ with DAG(
 
         Story:
         ```
-        {json.dumps(story["story"], indent=2)}
+        {json.dumps(story, indent=2)}
         ```
         """
 
@@ -113,7 +108,7 @@ with DAG(
 
         Story:
         ```
-        {json.dumps(story["story"], indent=2)}
+        {json.dumps(story, indent=2)}
         ```
         
         Output the results as key/value pairs of character names and descriptions.
@@ -231,10 +226,8 @@ with DAG(
         return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
 
     @task
-    def generate_image(title, prompt_data, task_instance):
-        title_directory = re.sub(r"[^a-z_]", "", title.lower().replace(" ", "_"))
-
-        page_dir = f"/media/seagate/flask-static/book/static/{title_directory}/{task_instance.map_index}"
+    def generate_image(prompt_data, dag_run, task_instance):
+        page_dir = f"/media/seagate/flask-static/book/static/{dag_run.conf['title']}/{task_instance.map_index}"
         os.makedirs(page_dir, exist_ok=True)
 
         conn = BaseHook.get_connection("openai_api")
@@ -261,10 +254,10 @@ with DAG(
 
     paragraph_descriptions = get_paragraph_description.partial(
         summary=summary, characters=character_descriptions
-    ).expand(paragraph=story["story"])
+    ).expand(paragraph=story)
 
     prompt_data = generate_image_prompt.partial(
         characters=character_descriptions
     ).expand_kwargs(paragraph_descriptions)
 
-    generate_image.partial(title=story["title"]).expand(prompt_data=prompt_data)
+    generate_image.expand(prompt_data=prompt_data)
