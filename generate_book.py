@@ -74,7 +74,7 @@ with DAG(
 
         Story:
         ```
-        {json.dumps(story, indent=2)}
+        {json.dumps(story["story"], indent=2)}
         ```
         """
 
@@ -113,7 +113,7 @@ with DAG(
 
         Story:
         ```
-        {json.dumps(story, indent=2)}
+        {json.dumps(story["story"], indent=2)}
         ```
         
         Output the results as key/value pairs of character names and descriptions.
@@ -256,8 +256,8 @@ with DAG(
             f.write(prompt_data["paragraph_text"])
 
     story = generate_story()
-    summary = understand_story(story["story"])
-    character_descriptions = get_character_descriptions(story["story"])
+    summary = understand_story(story)
+    character_descriptions = get_character_descriptions(story)
 
     paragraph_descriptions = get_paragraph_description.partial(
         summary=summary, characters=character_descriptions
