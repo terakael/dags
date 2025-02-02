@@ -1,6 +1,7 @@
 import base64
 from datetime import timedelta
 import json
+import re
 import time
 import os
 from typing import Dict, List
@@ -230,9 +231,7 @@ with DAG(
         return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
 
     @task
-    def generate_image(story, prompt_data, dag_run, task_instance):
-        import re
-
+    def generate_image(story, prompt_data, task_instance):
         root_dir = re.sub(r"[^a-z_]+", "", story[0].lower().replace(" ", "_"))
         page_dir = f"/media/seagate/flask-static/book/static/{root_dir}/{task_instance.map_index}"
         os.makedirs(page_dir, exist_ok=True)
@@ -255,6 +254,19 @@ with DAG(
         with open(f"{page_dir}/text.txt", "w", encoding="utf-8") as f:
             f.write(prompt_data["paragraph_text"])
 
+    @task
+    def create_thumbnail(story):
+        from PIL import Image
+
+        title_dir = re.sub(r"[^a-z_]+", "", story[0].lower().replace(" ", "_"))
+        static_dir = f"/media/seagate/flask-static/book/static"
+
+        img = Image.open(os.path.join(static_dir, title_dir, "0", "image.jpg"))
+        new_size = (int(img.width * 0.2), int(img.height * 0.2))
+
+        thumbnail = img.resize(new_size, Image.ANTIALIAS)
+        thumbnail.save(os.path.join(static_dir, title_dir, "thumbnail.jpg"))
+
     story = generate_story()
     summary = understand_story(story)
     character_descriptions = get_character_descriptions(story)
@@ -267,4 +279,7 @@ with DAG(
         characters=character_descriptions
     ).expand_kwargs(paragraph_descriptions)
 
-    generate_image.partial(story=story).expand(prompt_data=prompt_data)
+    images = generate_image.partial(story=story).expand(prompt_data=prompt_data)
+
+    # The 0th image is the title image, so this will be the thumbnail.
+    images[0] >> create_thumbnail(story)
