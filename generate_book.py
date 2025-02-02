@@ -49,7 +49,7 @@ with DAG(
 
         class Story(BaseModel):
             title: str
-            story: List[str]
+            story: list[str]
 
         response = client.models.generate_content(
             model="gemini-2.0-flash-exp",
@@ -233,7 +233,7 @@ with DAG(
     def generate_image(story, prompt_data, dag_run, task_instance):
         import re
 
-        root_dir = re.sub(r"^[a-z_]", "", story[0].lower().replace(" ", "_"))
+        root_dir = re.sub(r"[^a-z_]+", "", story[0].lower().replace(" ", "_"))
         page_dir = f"/media/seagate/flask-static/book/static/{root_dir}/{task_instance.map_index}"
         os.makedirs(page_dir, exist_ok=True)
 
