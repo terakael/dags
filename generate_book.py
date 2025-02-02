@@ -49,7 +49,7 @@ with DAG(
 
         class Story(BaseModel):
             title: str
-            story: list[str]
+            story: List[str]
 
         response = client.models.generate_content(
             model="gemini-2.0-flash-exp",
