@@ -28,7 +28,7 @@ with DAG(
     default_args={"retries": 3, "retry_delay": timedelta(minutes=1)},
 ) as dag:
 
-    @task
+    @task(multiple_outputs=True)
     def generate_story(dag_run):
         prompt = f"""
         Write a short story aimed at toddlers, using the following description:
