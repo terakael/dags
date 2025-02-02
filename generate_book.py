@@ -128,7 +128,7 @@ with DAG(
         return character_descriptions
 
     @task
-    def get_paragraph_description(paragraph, summary):
+    def get_paragraph_description(paragraph, summary, characters):
         prompt = f"""Provide a scene description suitable for generating an image, focusing on the actions, expressions, and postures of the characters. Describe the characters' actions and postures to convey their emotions, rather than explicitly stating the emotions.  The character descriptions will be provided separately, so make sure to refer to the characters by name. 
 
         Use the following scene as context:
@@ -137,8 +137,13 @@ with DAG(
         ```
 
         This scene is part of the following story summary:
-        ```
+        ```json
         {json.dumps(summary, indent=2)}
+        ```
+        
+        Characters of note are as follows - the output must refer to these characters by character_name when described.
+        ```json
+        {json.dumps(characters, indent=2)}
         ```
 
         The output should be a JSON object with two keys:
@@ -167,10 +172,54 @@ with DAG(
         )
 
         paragraph_description = json.loads(response.text)
-        return paragraph_description
+        return {"raw": paragraph, "description": paragraph_description}
+
+    @task
+    def generate_image_prompt(
+        characters,
+        paragraph_text,
+        paragraph_description,
+    ):
+        present_characters = []
+        paragraph_lower = paragraph_text.lower()
+        for char_data in characters:
+            char_name = char_data["character_name"]
+            if char_name.lower() in paragraph_lower or paragraph_lower == "the end.":
+                present_characters.append(char_data)
+
+        character_descriptions = ""
+        if present_characters:
+            formatted_list = "\n".join(
+                f"- {c['character_name']}: {c['character_description']}"
+                for c in present_characters
+            )
+            character_descriptions = f"""Character Descriptions:\n{formatted_list}"""
+
+        image_prompt = f"""Render the following in an oil painting style:
+
+        {character_descriptions}
+
+        Focus: {paragraph_description['focus']}
+
+        Action: {paragraph_description['action']}
+
+        Render it in an oil painting style.
+
+        It should be a single image, detailing the characters and environment, and nothing else.
+
+        I NEED to test how the tool works with extremely simple prompts. DO NOT add any detail, just use it AS-IS.
+        """
+
+        return image_prompt
 
     story = generate_story()
     summary = understand_story(story)
     character_descriptions = get_character_descriptions(story)
 
-    get_paragraph_description.partial(summary=summary).expand(paragraph=story)
+    paragraph_descriptions = get_paragraph_description.partial(
+        summary=summary, characters=character_descriptions
+    ).expand(paragraph=story)
+
+    generate_image_prompt.partial(characters=character_descriptions).expand_kwargs(
+        paragraph_descriptions
+    )
