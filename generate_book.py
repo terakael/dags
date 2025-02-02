@@ -39,25 +39,29 @@ with DAG(
         
         Make sure the story contains a life lesson, and a humorous twist.  Keep the story positive.  Use simple words.
         
-        The output should be eight paragraphs long.
+        The story should be eight paragraphs long.
         
-        Your output should be a JSON object containing an array of eight paragraphs.
+        Your output should be a JSON object containing a title and an array of eight paragraphs.
         """
 
         conn = BaseHook.get_connection("gemini_api")
         client = genai.Client(api_key=conn.password)
+
+        class Story(BaseModel):
+            title: str
+            story: list[str]
 
         response = client.models.generate_content(
             model="gemini-2.0-flash-exp",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_schema={"type": "array", "items": {"type": "string"}},
+                response_schema=Story,
             ),
         )
 
         out = json.loads(response.text)
-        return out
+        return [out["title"], *out["story"], "The end."]
 
     @task
     def understand_story(story) -> str:
@@ -226,8 +230,11 @@ with DAG(
         return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
 
     @task
-    def generate_image(prompt_data, dag_run, task_instance):
-        page_dir = f"/media/seagate/flask-static/book/static/{dag_run.conf['title']}/{task_instance.map_index}"
+    def generate_image(title, prompt_data, dag_run, task_instance):
+        import re
+
+        root_dir = re.sub(r"^[a-z_]", "", title.lower().replace(" ", "_"))
+        page_dir = f"/media/seagate/flask-static/book/static/{root_dir}/{task_instance.map_index}"
         os.makedirs(page_dir, exist_ok=True)
 
         conn = BaseHook.get_connection("openai_api")
@@ -260,4 +267,4 @@ with DAG(
         characters=character_descriptions
     ).expand_kwargs(paragraph_descriptions)
 
-    generate_image.expand(prompt_data=prompt_data)
+    generate_image.partial(title=story[0]).expand(prompt_data=prompt_data)
