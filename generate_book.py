@@ -28,7 +28,7 @@ with DAG(
     default_args={"retries": 3, "retry_delay": timedelta(minutes=1)},
 ) as dag:
 
-    @task(multiple_outputs=True)
+    @task
     def generate_story(dag_run):
         prompt = f"""
         Write a short story aimed at toddlers, using the following description:
@@ -230,10 +230,10 @@ with DAG(
         return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
 
     @task
-    def generate_image(title, prompt_data, dag_run, task_instance):
+    def generate_image(story, prompt_data, dag_run, task_instance):
         import re
 
-        root_dir = re.sub(r"^[a-z_]", "", title.lower().replace(" ", "_"))
+        root_dir = re.sub(r"^[a-z_]", "", story[0].lower().replace(" ", "_"))
         page_dir = f"/media/seagate/flask-static/book/static/{root_dir}/{task_instance.map_index}"
         os.makedirs(page_dir, exist_ok=True)
 
@@ -267,4 +267,4 @@ with DAG(
         characters=character_descriptions
     ).expand_kwargs(paragraph_descriptions)
 
-    generate_image.partial(title=story[0]).expand(prompt_data=prompt_data)
+    generate_image.partial(story=story).expand(prompt_data=prompt_data)
