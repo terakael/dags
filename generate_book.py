@@ -219,7 +219,32 @@ with DAG(
         I NEED to test how the tool works with extremely simple prompts. DO NOT add any detail, just use it AS-IS.
         """
 
-        return image_prompt
+        return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
+
+    @task
+    def generate_image(prompt_data, task_instance):
+        directory = f"/media/seagate/flask-static/book/static/airflow_test"
+        os.makedirs(directory, exist_ok=True)
+
+        response = OpenAI().images.generate(
+            model="dall-e-3",
+            prompt=prompt_data["image_prompt"],
+            size="1024x1024",
+            quality="standard",
+            n=1,
+            style="vivid",
+            response_format="b64_json",
+        )
+
+        page_dir = f"{directory}/{task_instance['map_index']}"
+        os.makedirs(page_dir, exist_ok=True)
+
+        with open(f"{page_dir}/image.jpg", "wb") as f:
+            image_data = base64.b64decode(response.data[0].b64_json)
+            f.write(image_data)
+
+        with open(f"{page_dir}/text.txt", "w", encoding="utf-8") as f:
+            f.write(prompt_data["paragraph_text"])
 
     story = generate_story()
     summary = understand_story(story)
@@ -229,6 +254,8 @@ with DAG(
         summary=summary, characters=character_descriptions
     ).expand(paragraph=story)
 
-    generate_image_prompt.partial(characters=character_descriptions).expand_kwargs(
-        paragraph_descriptions
-    )
+    prompt_data = generate_image_prompt.partial(
+        characters=character_descriptions
+    ).expand_kwargs(paragraph_descriptions)
+
+    generate_image.expand(prompt_data=prompt_data)
