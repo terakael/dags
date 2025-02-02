@@ -282,4 +282,4 @@ with DAG(
     images = generate_image.partial(story=story).expand(prompt_data=prompt_data)
 
     # The 0th image is the title image, so this will be the thumbnail.
-    images.partial()[0] >> create_thumbnail(story)
+    images >> create_thumbnail(story)
