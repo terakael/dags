@@ -190,7 +190,8 @@ with DAG(
         for char_data in characters:
             char_name = char_data["character_name"]
             if (
-                char_name.lower() in paragraph_description.lower()
+                char_name.lower() in paragraph_description["focus"].lower()
+                or char_name.lower() in paragraph_description["action"].lower()
                 or paragraph_lower == "the end."
             ):
                 present_characters.append(char_data)
