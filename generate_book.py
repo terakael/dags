@@ -172,7 +172,10 @@ with DAG(
         )
 
         paragraph_description = json.loads(response.text)
-        return {"raw": paragraph, "description": paragraph_description}
+        return {
+            "paragraph_text": paragraph,
+            "paragraph_description": paragraph_description,
+        }
 
     @task
     def generate_image_prompt(
