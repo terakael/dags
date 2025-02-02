@@ -1,4 +1,5 @@
 import base64
+from datetime import timedelta
 import json
 import time
 import os
@@ -21,6 +22,7 @@ with DAG(
     start_date=days_ago(1),
     catchup=False,
     params={"story_description": Param(type="string")},
+    default_args={"retries": 3, "retry_delay": timedelta(minutes=1)},
 ) as dag:
 
     @task
