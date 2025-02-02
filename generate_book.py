@@ -21,7 +21,10 @@ with DAG(
     schedule_interval=None,
     start_date=days_ago(1),
     catchup=False,
-    params={"story_description": Param(type="string")},
+    params={
+        "title": Param("", type="string"),
+        "story_description": Param(type="string"),
+    },
     default_args={"retries": 3, "retry_delay": timedelta(minutes=1)},
 ) as dag:
 
@@ -97,6 +100,7 @@ with DAG(
         2. For each character, create a detailed visual description that can be used to consistently represent them in images.
            Describe in detail all features of the character - do not overlook minor features.
            Do not use generic terms: make sure every feature is explicitly described and detailed.
+           For example, say "bear cub" if it's a young bear.  Specify the breed of animal, eg. dalmation for a dog, or triceratops for a dinosaur.
            Fill in the blanks on your own if features are "unspecified" or "unknown".  Be as descriptive as possible.
            Do not use generic terms such as "young" or "old"; be explicit in age.
         3. Focus on physical appearance, key attributes, and any distinguishing features mentioned or implied in the story.
