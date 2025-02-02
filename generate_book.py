@@ -223,8 +223,8 @@ with DAG(
 
     @task
     def generate_image(prompt_data, task_instance):
-        directory = f"/media/seagate/flask-static/book/static/airflow_test"
-        os.makedirs(directory, exist_ok=True)
+        page_dir = f"/media/seagate/flask-static/book/static/airflow_test/{task_instance.map_index}"
+        os.makedirs(page_dir, exist_ok=True)
 
         conn = BaseHook.get_connection("openai_api")
         response = OpenAI(api_key=conn.password).images.generate(
@@ -236,9 +236,6 @@ with DAG(
             style="vivid",
             response_format="b64_json",
         )
-
-        page_dir = f"{directory}/{task_instance['map_index']}"
-        os.makedirs(page_dir, exist_ok=True)
 
         with open(f"{page_dir}/image.jpg", "wb") as f:
             image_data = base64.b64decode(response.data[0].b64_json)
