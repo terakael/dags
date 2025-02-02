@@ -189,7 +189,10 @@ with DAG(
         paragraph_lower = paragraph_text.lower()
         for char_data in characters:
             char_name = char_data["character_name"]
-            if char_name.lower() in paragraph_lower or paragraph_lower == "the end.":
+            if (
+                char_name.lower() in paragraph_description.lower()
+                or paragraph_lower == "the end."
+            ):
                 present_characters.append(char_data)
 
         character_descriptions = ""
