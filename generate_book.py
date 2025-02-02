@@ -226,8 +226,8 @@ with DAG(
         return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
 
     @task
-    def generate_image(prompt_data, task_instance):
-        page_dir = f"/media/seagate/flask-static/book/static/airflow_test/{task_instance.map_index}"
+    def generate_image(prompt_data, dag_run, task_instance):
+        page_dir = f"/media/seagate/flask-static/book/static/{dag_run.conf['title']}/{task_instance.map_index}"
         os.makedirs(page_dir, exist_ok=True)
 
         conn = BaseHook.get_connection("openai_api")
