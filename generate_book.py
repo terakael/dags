@@ -226,7 +226,7 @@ with DAG(
         directory = f"/media/seagate/flask-static/book/static/airflow_test"
         os.makedirs(directory, exist_ok=True)
 
-        conn = BaseHook.get_connection("gemini_api")
+        conn = BaseHook.get_connection("openai_api")
         response = OpenAI(api_key=conn.password).images.generate(
             model="dall-e-3",
             prompt=prompt_data["image_prompt"],
