@@ -16,6 +16,8 @@ from airflow.utils.dates import days_ago
 from airflow.hooks.base import BaseHook
 from airflow.models.param import Param
 
+gemini_model = "gemini-2.0-pro-exp-02-05`"
+# gemini_model = 'gemini-2.0-flash-exp'
 
 with DAG(
     dag_id="generate_book",
@@ -53,7 +55,7 @@ with DAG(
             story: list[str]
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model=gemini_model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -86,7 +88,7 @@ with DAG(
             theme: str
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model=gemini_model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json", response_schema=StoryInfo
@@ -127,7 +129,7 @@ with DAG(
             character_description: str
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model=gemini_model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -174,7 +176,7 @@ with DAG(
             action: str
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model=gemini_model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
