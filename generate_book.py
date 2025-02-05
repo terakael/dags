@@ -60,6 +60,7 @@ with DAG(
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=Story,
+                temperature=2.0,
             ),
         )
 
@@ -91,7 +92,9 @@ with DAG(
             model=gemini_model,
             contents=prompt,
             config=types.GenerateContentConfig(
-                response_mime_type="application/json", response_schema=StoryInfo
+                response_mime_type="application/json",
+                response_schema=StoryInfo,
+                temperature=2.0,
             ),
         )
 
@@ -134,6 +137,7 @@ with DAG(
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=list[CharacterDescription],
+                temperature=2.0,
             ),
         )
 
@@ -181,6 +185,7 @@ with DAG(
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=ParagraphDescription,
+                temperature=2.0,
             ),
         )
 
