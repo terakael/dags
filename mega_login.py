@@ -5,7 +5,7 @@ import requests
 
 with DAG(
     dag_id="mega_login",
-    schedule_interval="@weekly",
+    schedule_interval="0 8 * * 1",
     start_date=days_ago(1),
     catchup=False,
 ) as dag:
