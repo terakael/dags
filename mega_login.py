@@ -7,7 +7,7 @@ import pendulum
 with DAG(
     dag_id="mega_login",
     schedule_interval="0 8 * * 1",
-    start_date=pendulum.datetime(2025, 1, 1, tz="JST"),
+    start_date=pendulum.datetime(2025, 1, 1, tz="Asia/Tokyo"),
     catchup=False,
 ) as dag:
 
