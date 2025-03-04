@@ -243,20 +243,32 @@ with DAG(
         page_dir = f"/media/seagate/flask-static/book/static/{root_dir}/{task_instance.map_index}"
         os.makedirs(page_dir, exist_ok=True)
 
-        conn = BaseHook.get_connection("openai_api")
-        response = OpenAI(api_key=conn.password).images.generate(
-            model="dall-e-3",
-            prompt=prompt_data["image_prompt"],
-            size="1024x1024",
-            quality="standard",
-            n=1,
-            style="vivid",
-            response_format="b64_json",
-        )
+        conn = BaseHook.get_connection("gemini_image_api")
+        client = genai.Client(api_key=conn.password)
 
-        with open(f"{page_dir}/image.jpg", "wb") as f:
-            image_data = base64.b64decode(response.data[0].b64_json)
-            f.write(image_data)
+        response = client.models.generate_images(
+            model="imagen-3.0-generate-002",
+            prompt=prompt_data["image_prompt"],
+            config=types.GenerateImagesConfig(number_of_images=1, seed=13048),
+        )
+        for generated_image in response.generated_images:
+            with open(f"{page_dir}/image.jpg", "wb") as f:
+                f.write(generated_image.image.image_bytes)
+
+        # conn = BaseHook.get_connection("openai_api")
+        # response = OpenAI(api_key=conn.password).images.generate(
+        #     model="dall-e-3",
+        #     prompt=prompt_data["image_prompt"],
+        #     size="1024x1024",
+        #     quality="standard",
+        #     n=1,
+        #     style="vivid",
+        #     response_format="b64_json",
+        # )
+
+        # with open(f"{page_dir}/image.jpg", "wb") as f:
+        #     image_data = base64.b64decode(response.data[0].b64_json)
+        #     f.write(image_data)
 
         with open(f"{page_dir}/text.txt", "w", encoding="utf-8") as f:
             f.write(prompt_data["paragraph_text"])
