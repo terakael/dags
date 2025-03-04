@@ -382,16 +382,12 @@ with DAG(
     def get_character_descriptions(story) -> List[Dict]:
         prompt = f"""
         Please read the following children's story and then:
-        1. Identify all the main characters in the story.  Characters don't have to be animate; any recurring item or creature is a character.
-        2. For each character, create a detailed visual description that can be used to consistently represent them in images.
-           Describe in detail all features of the character - do not overlook minor features.
-           Do not use generic terms: make sure every feature is explicitly described and detailed.
-           For example, say "bear cub" if it's a young bear.  Specify the breed of animal, eg. dalmation for a dog, or triceratops for a dinosaur.
-           Fill in the blanks on your own if features are "unspecified" or "unknown".  Be as descriptive as possible.
-           Do not use generic terms such as "young" or "old"; be explicit in age.
-        3. Focus on physical appearance, key attributes, and any distinguishing features mentioned or implied in the story.
-        4. Do not describe any expressions, or postures.  We want a description that can be used as a base, which can be built upon throughout the story.
-
+        1. Identify all the main characters in the story (including important recurring items or creatures).
+        2. For each character, create a concise but precise visual description for consistent image representation.
+           Include specific details like species, color, size, and distinctive features.
+           Be specific rather than generic (e.g., "spotted dalmatian puppy" not just "dog").
+           Focus only on permanent physical traits, not expressions or postures.
+           
         Story:
         ```
         {json.dumps(story, indent=2)}
@@ -422,28 +418,30 @@ with DAG(
 
     @task
     def get_paragraph_description(paragraph, summary, characters):
-        prompt = f"""Provide a scene description suitable for generating an image, focusing on the actions, expressions, and postures of the characters. Describe the characters' actions and postures to convey their emotions, rather than explicitly stating the emotions.  The character descriptions will be provided separately, so make sure to refer to the characters by name. 
+        prompt = f"""Create a concise scene description for image generation with these two components:
+        1. The setting/environment
+        2. The characters' actions and postures (refer to characters by name)
 
-        Use the following scene as context:
+        Scene:
         ```
         {paragraph}
         ```
 
-        This scene is part of the following story summary:
+        Story context:
         ```json
         {json.dumps(summary, indent=2)}
         ```
         
-        Characters of note are as follows - the output must refer to these characters by character_name when described.
+        Characters:
         ```json
         {json.dumps(characters, indent=2)}
         ```
 
-        The output should be a JSON object with two keys:
+        Output as JSON:
         ```json
         {{
-            "focus": "a description of the overall scene; environment.",
-            "action": "a description of the characters' actions and postures."
+            "focus": "brief description of setting/environment",
+            "action": "concise description of characters' actions"
         }}
         ```
         """
@@ -490,25 +488,24 @@ with DAG(
 
         character_descriptions = ""
         if present_characters:
-            formatted_list = "\n".join(
-                f"- {c['character_name']}: {c['character_description']}"
-                for c in present_characters
-            )
-            character_descriptions = f"""Character Descriptions:\n{formatted_list}"""
+            # More structured format that's both concise and readable
+            char_entries = []
+            for c in present_characters:
+                # Trim any extra spaces and ensure the description is concise
+                desc = c["character_description"].strip()
+                char_entries.append(f"{c['character_name']}: {desc}")
 
-        image_prompt = f"""Render the following in an oil painting style:
+            character_descriptions = "Characters: " + "; ".join(char_entries)
+
+        image_prompt = f"""Oil painting style:
 
         {character_descriptions}
 
-        Focus: {paragraph_description['focus']}
-
+        Setting: {paragraph_description['focus']}
+        
         Action: {paragraph_description['action']}
-
-        Render it in an oil painting style.
-
-        It should be a single image, detailing the characters and environment, and nothing else.
-
-        I NEED to test how the tool works with extremely simple prompts. DO NOT add any detail, just use it AS-IS.
+        
+        Single image showing characters and environment only.
         """
 
         return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
