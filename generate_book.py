@@ -16,8 +16,8 @@ from airflow.utils.dates import days_ago
 from airflow.hooks.base import BaseHook
 from airflow.models.param import Param
 
-gemini_model = "gemini-2.0-pro-exp-02-05"
-# gemini_model = 'gemini-2.0-flash-exp'
+text_model = "gemini-2.0-pro-exp-02-05"
+image_model = "imagen-3.0-generate-002"
 
 with DAG(
     dag_id="generate_book",
@@ -55,7 +55,7 @@ with DAG(
             story: list[str]
 
         response = client.models.generate_content(
-            model=gemini_model,
+            model=text_model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -89,7 +89,7 @@ with DAG(
             theme: str
 
         response = client.models.generate_content(
-            model=gemini_model,
+            model=text_model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -132,7 +132,7 @@ with DAG(
             character_description: str
 
         response = client.models.generate_content(
-            model=gemini_model,
+            model=text_model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -180,7 +180,7 @@ with DAG(
             action: str
 
         response = client.models.generate_content(
-            model=gemini_model,
+            model=text_model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -243,11 +243,11 @@ with DAG(
         page_dir = f"/media/seagate/flask-static/book/static/{root_dir}/{task_instance.map_index}"
         os.makedirs(page_dir, exist_ok=True)
 
-        conn = BaseHook.get_connection("gemini_image_api")
+        conn = BaseHook.get_connection("gemini_api")
         client = genai.Client(api_key=conn.password)
 
         response = client.models.generate_images(
-            model="imagen-3.0-generate-002",
+            model=image_model,
             prompt=prompt_data["image_prompt"],
             config=types.GenerateImagesConfig(number_of_images=1, seed=13048),
         )
