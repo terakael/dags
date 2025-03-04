@@ -1,6 +1,7 @@
 import base64
 from datetime import timedelta
 import json
+import random
 import re
 import time
 import os
@@ -32,19 +33,294 @@ with DAG(
 ) as dag:
 
     @task
-    def generate_story(dag_run):
+    def select_story_structure():
+        """Randomly select a story structure to guide the narrative."""
+        # Define various story structures
+        story_structures = [
+            {
+                "name": "Hero's Journey",
+                "description": "A character goes on an adventure, faces challenges, and returns transformed",
+                "elements": [
+                    "Ordinary World",
+                    "Call to Adventure",
+                    "Meeting the Mentor",
+                    "Crossing the Threshold",
+                    "Tests, Allies, and Enemies",
+                    "The Ordeal",
+                    "Reward",
+                    "Return with the Elixir",
+                ],
+            },
+            {
+                "name": "Three-Act Structure",
+                "description": "Setup, confrontation, and resolution",
+                "elements": [
+                    "Exposition",
+                    "Inciting Incident",
+                    "Rising Action",
+                    "Midpoint",
+                    "Complications",
+                    "Climax",
+                    "Resolution",
+                ],
+            },
+            {
+                "name": "Problem-Solution",
+                "description": "Character faces a problem and finds a solution",
+                "elements": [
+                    "Introduce Character",
+                    "Establish Problem",
+                    "Failed Attempts",
+                    "Discovery",
+                    "Implementing Solution",
+                    "Resolution",
+                ],
+            },
+            {
+                "name": "Character Transformation",
+                "description": "Character undergoes a significant change",
+                "elements": [
+                    "Initial Character State",
+                    "Catalyst for Change",
+                    "Resistance",
+                    "Turning Point",
+                    "Growth",
+                    "New Character State",
+                ],
+            },
+            {
+                "name": "Quest/Adventure",
+                "description": "Characters embark on a journey to achieve a goal",
+                "elements": [
+                    "The Call",
+                    "Preparation",
+                    "Journey Begins",
+                    "Obstacles",
+                    "Final Challenge",
+                    "Achievement",
+                    "Return",
+                ],
+            },
+        ]
+
+        # Randomly select a story structure
+        selected_structure = random.choice(story_structures)
+
+        # Log the selected structure
+        print(f"Selected story structure: {selected_structure['name']}")
+
+        return selected_structure
+
+    @task
+    def define_characters(story_structure, dag_run):
+        """Create detailed character definitions based on the story description and selected structure."""
         prompt = f"""
-        Write a short story aimed at toddlers, using the following description:
+        Based on the following story description and selected story structure, define 2-4 main characters for a children's story for toddlers.
         
+        Story Description:
         ```
-        {dag_run.conf['story_description']}
+        {dag_run.conf["story_description"]}
         ```
         
-        Make sure the story contains a life lesson, and a humorous twist.  Keep the story positive.  Use simple words.
+        Story Structure: {story_structure['name']}
+        Structure Elements: {', '.join(story_structure['elements'])}
         
-        The story should be eight paragraphs long.
+        For each character, provide:
+        1. Name
+        2. Type (animal, person, magical creature, object, etc.)
+        3. Key traits (3-5 personality traits)
+        4. Role in the story (protagonist, helper, antagonist, etc.)
+        5. Motivation (what drives this character)
+        6. Physical description (brief but specific)
         
-        Your output should be a JSON object containing a title and an array of eight paragraphs.
+        Make the characters appropriate for toddlers - simple, relatable, and engaging.
+        
+        Output in JSON format with each character as an object in an array.
+        """
+
+        conn = BaseHook.get_connection("gemini_api")
+        client = genai.Client(api_key=conn.password)
+
+        class Character(BaseModel):
+            name: str
+            type: str
+            traits: list[str]
+            role: str
+            motivation: str
+            physical_description: str
+
+        response = client.models.generate_content(
+            model=text_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=list[Character],
+                temperature=1.0,
+            ),
+        )
+
+        characters = json.loads(response.text)
+        return characters
+
+    @task
+    def plot_story_arc(story_structure, characters, dag_run):
+        """Develop a plot arc following the selected story structure."""
+        characters_json = json.dumps(characters, indent=2)
+
+        prompt = f"""
+        Create a plot arc for a children's story based on the following information:
+        
+        Story Description:
+        ```
+        {dag_run.conf["story_description"]}
+        ```
+        
+        Story Structure: {story_structure['name']}
+        Structure Elements: {', '.join(story_structure['elements'])}
+        
+        Characters:
+        ```json
+        {characters_json}
+        ```
+        
+        For each element in the story structure, provide:
+        1. A brief description of what happens in that part of the story
+        2. Which characters are involved
+        3. How this advances the overall narrative
+        
+        Remember:
+        - The story is for toddlers, so keep it simple and positive
+        - Include a life lesson or moral
+        - Add a humorous twist somewhere in the story
+        - Use age-appropriate conflict and resolution
+        
+        Output in JSON format with each structure element as a key and the details as values.
+        """
+
+        conn = BaseHook.get_connection("gemini_api")
+        client = genai.Client(api_key=conn.password)
+
+        response = client.models.generate_content(
+            model=text_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=1.0,
+            ),
+        )
+
+        story_arc = json.loads(response.text)
+        return story_arc
+
+    @task
+    def create_story_outline(story_structure, characters, story_arc, dag_run):
+        """Create a detailed paragraph-by-paragraph outline of the story."""
+        characters_json = json.dumps(characters, indent=2)
+        story_arc_json = json.dumps(story_arc, indent=2)
+
+        prompt = f"""
+        Create a detailed paragraph-by-paragraph outline for a children's story based on the following information:
+        
+        Story Description:
+        ```
+        {dag_run.conf["story_description"]}
+        ```
+        
+        Story Structure: {story_structure['name']}
+        
+        Characters:
+        ```json
+        {characters_json}
+        ```
+        
+        Story Arc:
+        ```json
+        {story_arc_json}
+        ```
+        
+        Guidelines:
+        1. Create between 8 and 20 paragraphs
+        2. Each paragraph should be a logical scene or beat in the story
+        3. Determine the appropriate number of paragraphs based on the complexity of the story
+        4. For each paragraph, provide a brief description of what happens
+        5. Indicate which characters appear in each paragraph
+        6. Show how the paragraph advances the story
+        
+        The outline will be used to generate the full story, so be specific about what happens in each paragraph.
+        
+        Output in JSON format with an array of paragraph outlines. Each paragraph outline should have:
+        - a number (starting from 1)
+        - a brief title
+        - a description of what happens
+        - characters involved
+        """
+
+        conn = BaseHook.get_connection("gemini_api")
+        client = genai.Client(api_key=conn.password)
+
+        class ParagraphOutline(BaseModel):
+            number: int
+            title: str
+            description: str
+            characters: list[str]
+
+        response = client.models.generate_content(
+            model=text_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=list[ParagraphOutline],
+                temperature=1.0,
+            ),
+        )
+
+        outline = json.loads(response.text)
+        return outline
+
+    @task
+    def generate_story(story_structure, characters, story_arc, story_outline, dag_run):
+        """Generate the full story based on the planning information."""
+        story_description = dag_run.conf["story_description"]
+        characters_json = json.dumps(characters, indent=2)
+        story_arc_json = json.dumps(story_arc, indent=2)
+        story_outline_json = json.dumps(story_outline, indent=2)
+
+        prompt = f"""
+        Write a children's story for toddlers based on the following detailed plan:
+        
+        Story Description:
+        ```
+        {story_description}
+        ```
+        
+        Story Structure: {story_structure['name']}
+        
+        Characters:
+        ```json
+        {characters_json}
+        ```
+        
+        Story Arc:
+        ```json
+        {story_arc_json}
+        ```
+        
+        Paragraph Outline:
+        ```json
+        {story_outline_json}
+        ```
+        
+        Guidelines:
+        1. Follow the paragraph outline exactly, creating one paragraph for each outline item
+        2. Use simple words appropriate for toddlers
+        3. Keep the story positive and engaging
+        4. Include the life lesson as planned in the story arc
+        5. Include the humorous twist as planned
+        6. Make sure each character behaves according to their defined traits
+        
+        Your output should be a JSON object containing:
+        1. A title for the story
+        2. An array of paragraphs (one for each outline item)
         """
 
         conn = BaseHook.get_connection("gemini_api")
@@ -60,7 +336,7 @@ with DAG(
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=Story,
-                temperature=2.0,
+                temperature=1.0,
             ),
         )
 
@@ -286,7 +562,33 @@ with DAG(
         thumbnail = img.resize(new_size, Image.LANCZOS)
         thumbnail.save(os.path.join(static_dir, title_dir, "thumbnail.jpg"))
 
-    story = generate_story()
+    # Chain-of-thought story planning
+    story_structure = select_story_structure()
+
+    characters = define_characters(
+        story_structure=story_structure,
+    )
+
+    story_arc = plot_story_arc(
+        story_structure=story_structure,
+        characters=characters,
+    )
+
+    story_outline = create_story_outline(
+        story_structure=story_structure,
+        characters=characters,
+        story_arc=story_arc,
+    )
+
+    # Generate the story based on the planning
+    story = generate_story(
+        story_structure=story_structure,
+        characters=characters,
+        story_arc=story_arc,
+        story_outline=story_outline,
+    )
+
+    # Proceed with the rest of the pipeline
     summary = understand_story(story)
     character_descriptions = get_character_descriptions(story)
 
