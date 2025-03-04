@@ -127,13 +127,15 @@ with DAG(
         
         For each character, provide:
         1. Name
-        2. Type (animal, person, magical creature, object, etc.)
+        2. Type (animal, magical creature, object, etc.)
         3. Key traits (3-5 personality traits)
         4. Role in the story (protagonist, helper, antagonist, etc.)
         5. Motivation (what drives this character)
         6. Physical description (brief but specific)
         
         Make the characters appropriate for toddlers - simple, relatable, and engaging.
+        
+        Important note: do not use human child characters, as it causes issues with image generation.
         
         Output in JSON format with each character as an object in an array.
         """
