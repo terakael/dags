@@ -249,7 +249,7 @@ with DAG(
         response = client.models.generate_images(
             model=image_model,
             prompt=prompt_data["image_prompt"],
-            config=types.GenerateImagesConfig(number_of_images=1, seed=13048),
+            config=types.GenerateImagesConfig(number_of_images=1),
         )
         for generated_image in response.generated_images:
             with open(f"{page_dir}/image.jpg", "wb") as f:
