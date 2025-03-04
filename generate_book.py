@@ -383,10 +383,19 @@ with DAG(
         prompt = f"""
         Please read the following children's story and then:
         1. Identify all the main characters in the story (including important recurring items or creatures).
-        2. For each character, create a concise but precise visual description for consistent image representation.
-           Include specific details like species, color, size, and distinctive features.
-           Be specific rather than generic (e.g., "spotted dalmatian puppy" not just "dog").
-           Focus only on permanent physical traits, not expressions or postures.
+        2. For each character, create a detailed visual description that can be used to consistently represent them in images.
+           IMPORTANT: Always explicitly specify the following even if not mentioned in the story:
+           - Exact age/development stage (cub vs adult bear, puppy vs grown dog, etc.)
+           - Precise species and subspecies where applicable
+           - Specific colors, textures, and patterns
+           - Size relative to other characters
+           - Distinctive physical features
+           
+           Example: "A 3-year-old brown grizzly bear cub with honey-colored snout" NOT just "a bear"
+           Example: "A bright red vintage fire truck with yellow ladder and chrome bumpers" NOT just "a fire truck"
+           
+           DO NOT use general terms like "young" or "old" - specify exact age or development stage.
+           DO NOT leave any physical attribute unspecified - make definitive choices for all visual aspects.
            
         Story:
         ```
@@ -441,7 +450,7 @@ with DAG(
         ```json
         {{
             "focus": "brief description of setting/environment",
-            "action": "concise description of characters' actions"
+            "action": "description of characters' actions, using as few words as possible."
         }}
         ```
         """
