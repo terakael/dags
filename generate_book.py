@@ -427,9 +427,10 @@ with DAG(
 
     @task
     def get_paragraph_description(paragraph, summary, characters):
-        prompt = f"""Create a concise scene description for image generation with these two components:
+        prompt = f"""Create a concise scene description for image generation with these three components:
         1. The setting/environment
-        2. The characters' actions and postures (refer to characters by name)
+        2. The characters present in the scene (whether explicity or implicitly mentioned).
+        3. The characters' actions and postures (refer to characters by name)
 
         Scene:
         ```
@@ -450,6 +451,7 @@ with DAG(
         ```json
         {{
             "focus": "brief description of setting/environment",
+            "characters": "list of characters present in the scene",
             "action": "description of characters' actions, using as few words as possible."
         }}
         ```
@@ -460,6 +462,7 @@ with DAG(
 
         class ParagraphDescription(BaseModel):
             focus: str
+            characters: list[str]
             action: str
 
         response = client.models.generate_content(
@@ -484,27 +487,40 @@ with DAG(
         paragraph_text,
         paragraph_description,
     ):
-        present_characters = []
-        paragraph_lower = paragraph_text.lower()
-        for char_data in characters:
-            char_name = char_data["character_name"]
-            if (
-                char_name.lower() in paragraph_description["focus"].lower()
-                or char_name.lower() in paragraph_description["action"].lower()
-                or paragraph_lower == "the end."
-            ):
-                present_characters.append(char_data)
-
         character_descriptions = ""
-        if present_characters:
-            # More structured format that's both concise and readable
-            char_entries = []
-            for c in present_characters:
-                # Trim any extra spaces and ensure the description is concise
-                desc = c["character_description"].strip()
-                char_entries.append(f"{c['character_name']}: {desc}")
+        present_characters = []
+        for char_data in characters:
+            if (
+                char_data["character_name"] in paragraph_description["characters"]
+                or paragraph_text.lower() == "the end."
+            ):
+                desc = char_data["character_description"].strip()
+                present_characters.append(f"{char_data['character_name']}: {desc}")
 
-            character_descriptions = "\n- ".join(char_entries)
+        if present_characters:
+            character_descriptions = "\n- ".join(present_characters)
+
+        # present_characters = paragraph_description["characters"]
+        # paragraph_lower = paragraph_text.lower()
+        # for char_data in characters:
+        #     char_name = char_data["character_name"]
+        #     if (
+        #         char_name.lower() in paragraph_description["focus"].lower()
+        #         or char_name.lower() in paragraph_description["action"].lower()
+        #         or paragraph_lower == "the end."
+        #     ):
+        #         present_characters.append(char_data)
+
+        # character_descriptions = ""
+        # if present_characters:
+        #     # More structured format that's both concise and readable
+        #     char_entries = []
+        #     for c in present_characters:
+        #         # Trim any extra spaces and ensure the description is concise
+        #         desc = c["character_description"].strip()
+        #         char_entries.append(f"{c['character_name']}: {desc}")
+
+        #     character_descriptions = "\n- ".join(char_entries)
 
         image_prompt = f"""
         # Image theme
