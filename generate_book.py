@@ -504,17 +504,20 @@ with DAG(
                 desc = c["character_description"].strip()
                 char_entries.append(f"{c['character_name']}: {desc}")
 
-            character_descriptions = "Characters: " + "; ".join(char_entries)
+            character_descriptions = "\n- ".join(char_entries)
 
-        image_prompt = f"""Oil painting style:
+        image_prompt = f"""
+        # Image theme
+        Oil painting style; single image showing characters and environment only.
 
+        # Characters
         {character_descriptions}
 
-        Setting: {paragraph_description['focus']}
+        # Setting
+        {paragraph_description['focus']}
         
-        Action: {paragraph_description['action']}
-        
-        Single image showing characters and environment only.
+        # Action
+        {paragraph_description['action']}
         """
 
         return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
