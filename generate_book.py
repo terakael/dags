@@ -500,41 +500,18 @@ with DAG(
         if present_characters:
             character_descriptions = "\n- ".join(present_characters)
 
-        # present_characters = paragraph_description["characters"]
-        # paragraph_lower = paragraph_text.lower()
-        # for char_data in characters:
-        #     char_name = char_data["character_name"]
-        #     if (
-        #         char_name.lower() in paragraph_description["focus"].lower()
-        #         or char_name.lower() in paragraph_description["action"].lower()
-        #         or paragraph_lower == "the end."
-        #     ):
-        #         present_characters.append(char_data)
-
-        # character_descriptions = ""
-        # if present_characters:
-        #     # More structured format that's both concise and readable
-        #     char_entries = []
-        #     for c in present_characters:
-        #         # Trim any extra spaces and ensure the description is concise
-        #         desc = c["character_description"].strip()
-        #         char_entries.append(f"{c['character_name']}: {desc}")
-
-        #     character_descriptions = "\n- ".join(char_entries)
-
         image_prompt = f"""
-        # Image theme
-        Oil painting style; single image showing characters and environment only.
+# Image theme
+Comic style; single image showing characters and environment only.
 
-        # Characters
-        {character_descriptions}
+# Characters
+{character_descriptions}
 
-        # Setting
-        {paragraph_description['focus']}
-        
-        # Action
-        {paragraph_description['action']}
-        """
+# Setting
+{paragraph_description['focus']}
+
+# Action
+{paragraph_description['action']}"""
 
         return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
 
