@@ -192,7 +192,6 @@ with DAG(
         
         Remember:
         - The story is for toddlers, so keep it simple and positive
-        - Include a life lesson or moral
         - Add a humorous twist somewhere in the story
         - Use age-appropriate conflict and resolution
         
@@ -316,9 +315,8 @@ with DAG(
         1. Follow the paragraph outline exactly, creating one paragraph for each outline item
         2. Use simple words appropriate for toddlers
         3. Keep the story positive and engaging
-        4. Include the life lesson as planned in the story arc
-        5. Include the humorous twist as planned
-        6. Make sure each character behaves according to their defined traits
+        4. Include the humorous twist as planned
+        5. Make sure each character behaves according to their defined traits
         
         Your output should be a JSON object containing:
         1. A title for the story
