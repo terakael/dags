@@ -418,9 +418,11 @@ with DAG(
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=list[CharacterDescription],
-                temperature=2.0,
+                temperature=1.0,
             ),
         )
+
+        print(response.text)
 
         character_descriptions = json.loads(response.text)
         return character_descriptions
