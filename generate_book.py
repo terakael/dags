@@ -558,9 +558,8 @@ with DAG(
                 setting_text,
             )
 
-        image_prompt = f"""
-# Image theme
-Comic style; single image showing characters and environment only.
+        image_prompt = f"""# Image theme
+Oil panting style; single image showing characters and environment only.
 
 # Characters
 {character_descriptions}
