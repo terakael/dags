@@ -481,24 +481,80 @@ with DAG(
             "paragraph_description": paragraph_description,
         }
 
+    def to_upper_snake_case(name):
+        """Convert a name to UPPER_SNAKE_CASE format.
+
+        Example: "Captain Snuggles" becomes "CAPTAIN_SNUGGLES"
+        """
+        # Replace spaces and other non-alphanumeric characters with underscores
+        snake_case = re.sub(r"[^a-zA-Z0-9]", "_", name)
+        # Remove consecutive underscores
+        snake_case = re.sub(r"_+", "_", snake_case)
+        # Convert to uppercase
+        return snake_case.upper()
+
     @task
     def generate_image_prompt(
         characters,
         paragraph_text,
         paragraph_description,
     ):
+        # First, create a mapping of original character names to UPPER_SNAKE_CASE versions
+        character_name_mapping = {}
+        for char_data in characters:
+            original_name = char_data["character_name"]
+            upper_snake_name = to_upper_snake_case(original_name)
+            character_name_mapping[original_name] = upper_snake_name
+
+        # Sort character names by length (descending) to replace longer names first
+        # This prevents partial replacements within longer names
+        sorted_original_names = sorted(
+            character_name_mapping.keys(), key=len, reverse=True
+        )
+
         character_descriptions = ""
         present_characters = []
+
         for char_data in characters:
+            original_name = char_data["character_name"]
+            upper_snake_name = character_name_mapping[original_name]
+
             if (
-                char_data["character_name"] in paragraph_description["characters"]
+                original_name in paragraph_description["characters"]
                 or paragraph_text.lower() == "the end."
             ):
+                # Get the original description
                 desc = char_data["character_description"].strip()
-                present_characters.append(f"{char_data['character_name']}: {desc}")
+
+                # Replace all character name references in the description with UPPER_SNAKE_CASE
+                for name in sorted_original_names:
+                    desc = re.sub(
+                        r"\b" + re.escape(name) + r"\b",
+                        character_name_mapping[name],
+                        desc,
+                    )
+
+                present_characters.append(f"{upper_snake_name}: {desc}")
 
         if present_characters:
             character_descriptions = "\n- ".join(present_characters)
+
+        # Convert character names in action text to UPPER_SNAKE_CASE
+        action_text = paragraph_description["action"]
+        setting_text = paragraph_description["focus"]
+
+        # Replace character names in action and setting with UPPER_SNAKE_CASE
+        for name in sorted_original_names:
+            action_text = re.sub(
+                r"\b" + re.escape(name) + r"\b",
+                character_name_mapping[name],
+                action_text,
+            )
+            setting_text = re.sub(
+                r"\b" + re.escape(name) + r"\b",
+                character_name_mapping[name],
+                setting_text,
+            )
 
         image_prompt = f"""
 # Image theme
@@ -508,10 +564,10 @@ Comic style; single image showing characters and environment only.
 {character_descriptions}
 
 # Setting
-{paragraph_description['focus']}
+{setting_text}
 
 # Action
-{paragraph_description['action']}"""
+{action_text}"""
 
         return {"image_prompt": image_prompt, "paragraph_text": paragraph_text}
 
