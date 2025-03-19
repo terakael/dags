@@ -17,7 +17,7 @@ from airflow.utils.dates import days_ago
 from airflow.hooks.base import BaseHook
 from airflow.models.param import Param
 
-text_model = "gemini-2.0-pro-exp-02-05"
+text_model = "gemini-2.0-flash"
 image_model = "imagen-3.0-generate-002"
 
 with DAG(
